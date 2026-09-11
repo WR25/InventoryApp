@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="InventoryApp.Api/InventoryApp.Api.csproj" />
+  <Project Path="InventoryApp.Mobile/InventoryApp.Mobile.csproj" />
+  <Project Path="InventoryApp.Shared/InventoryApp.Shared.csproj" />
+</Solution>

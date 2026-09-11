@@ -1,0 +1,52 @@
+@page "/"
+@inject IInventoryService InventoryService
+
+<h1>Inventory</h1>
+
+@if (_isLoading)
+{
+    <div class="d-flex align-items-center gap-2 text-muted" role="status">
+        <div class="spinner-border spinner-border-sm" aria-hidden="true"></div>
+        <span>Loading inventory…</span>
+    </div>
+}
+else if (_items is null)
+{
+    <div class="alert alert-danger" role="alert">
+        <p class="mb-3">Couldn't load the inventory. Check your connection and that the API is running.</p>
+        <button type="button" class="btn btn-danger" @onclick="LoadAsync">Retry</button>
+    </div>
+}
+else if (_items.Count == 0)
+{
+    <p class="text-muted">There are no items in the inventory.</p>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var item in _items)
+        {
+            <a href="inventory/@item.ItemId"
+               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-3 py-3">
+                <span>@item.ItemName</span>
+                <span class="badge rounded-pill @(item.CurrentQuantity == 0 ? "text-bg-danger" : "text-bg-secondary")">
+                    @item.CurrentQuantity
+                </span>
+            </a>
+        }
+    </div>
+}
+
+@code {
+    private List<InventoryItem>? _items;
+    private bool _isLoading = true;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _items = await InventoryService.GetInventoryAsync();
+        _isLoading = false;
+    }
+}

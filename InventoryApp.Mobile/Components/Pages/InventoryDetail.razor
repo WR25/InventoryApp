@@ -1,0 +1,106 @@
+@page "/inventory/{ItemId:int}"
+@inject IInventoryService InventoryService
+@inject NavigationManager Navigation
+
+@if (_isLoading)
+{
+    <div class="d-flex align-items-center gap-2 text-muted" role="status">
+        <div class="spinner-border spinner-border-sm" aria-hidden="true"></div>
+        <span>Loading item…</span>
+    </div>
+}
+else if (_item is null)
+{
+    <h1>Item unavailable</h1>
+    <div class="alert alert-danger" role="alert">
+        <p class="mb-3">Couldn't load item #@ItemId. It may have been removed, or the server can't be reached.</p>
+        <button type="button" class="btn btn-danger" @onclick="LoadAsync">Retry</button>
+        <a class="btn btn-link" href="">Back to list</a>
+    </div>
+}
+else
+{
+    <h1 class="h3">@_item.ItemName</h1>
+    <p class="text-muted small">
+        Item #@_item.ItemId · Last updated @_item.LastUpdated.ToLocalTime().ToString("g")
+    </p>
+
+    <p class="form-label mb-1" id="quantity-label">Quantity on hand</p>
+    <div class="input-group input-group-lg mb-1" style="max-width: 16rem"
+         role="group" aria-labelledby="quantity-label">
+        <button type="button" class="btn btn-outline-secondary" aria-label="Decrease quantity"
+                @onclick="Decrement" disabled="@(_quantity == 0 || _isSaving)">−</button>
+        <output class="form-control text-center" aria-live="polite">@_quantity</output>
+        <button type="button" class="btn btn-outline-secondary" aria-label="Increase quantity"
+                @onclick="Increment" disabled="@_isSaving">+</button>
+    </div>
+    <p class="small text-muted mb-3">
+        @(HasChanges ? $"Was {_item.CurrentQuantity}" : " ")
+    </p>
+
+    @if (_saveFailed)
+    {
+        <div class="alert alert-danger" role="alert">
+            Couldn't save the new quantity. Your change is still here, so you can try again.
+        </div>
+    }
+
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary" @onclick="SaveAsync" disabled="@(_isSaving || !HasChanges)">
+            @if (_isSaving)
+            {
+                <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+            }
+            Save
+        </button>
+        <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@_isSaving">
+            Cancel
+        </button>
+    </div>
+}
+
+@code {
+    [Parameter] public int ItemId { get; set; }
+
+    private InventoryItem? _item;
+    private int _quantity;
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private bool _saveFailed;
+
+    private bool HasChanges => _item is not null && _quantity != _item.CurrentQuantity;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _item = await InventoryService.GetItemAsync(ItemId);
+        _quantity = _item?.CurrentQuantity ?? 0;
+        _isLoading = false;
+    }
+
+    private void Increment() => _quantity++;
+
+    private void Decrement() => _quantity = Math.Max(0, _quantity - 1);
+
+    private async Task SaveAsync()
+    {
+        _isSaving = true;
+        _saveFailed = false;
+
+        var saved = await InventoryService.UpdateQuantityAsync(ItemId, _quantity);
+
+        _isSaving = false;
+        if (saved)
+        {
+            Navigation.NavigateTo("");
+        }
+        else
+        {
+            _saveFailed = true;
+        }
+    }
+
+    private void Cancel() => Navigation.NavigateTo("");
+}

@@ -1,0 +1,39 @@
+@InventoryApp.Api_HostAddress = http://localhost:5100
+
+### List all items
+GET {{InventoryApp.Api_HostAddress}}/api/inventory
+Accept: application/json
+
+### Get one item (200)
+GET {{InventoryApp.Api_HostAddress}}/api/inventory/1
+Accept: application/json
+
+### Get a missing item (404 ProblemDetails)
+GET {{InventoryApp.Api_HostAddress}}/api/inventory/999
+Accept: application/json
+
+### Update quantity (200)
+PUT {{InventoryApp.Api_HostAddress}}/api/inventory/1
+Content-Type: application/json
+
+{
+  "currentQuantity": 3950
+}
+
+### Negative quantity (400 ValidationProblemDetails)
+PUT {{InventoryApp.Api_HostAddress}}/api/inventory/1
+Content-Type: application/json
+
+{
+  "currentQuantity": -5
+}
+
+### Update a missing item (404 ProblemDetails)
+PUT {{InventoryApp.Api_HostAddress}}/api/inventory/999
+Content-Type: application/json
+
+{
+  "currentQuantity": 10
+}
+
+###
